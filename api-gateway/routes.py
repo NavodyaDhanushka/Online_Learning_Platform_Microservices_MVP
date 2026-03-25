@@ -4,6 +4,7 @@ import httpx
 router = APIRouter()
 
 USER_SERVICE_URL = "http://127.0.0.1:8001"
+COURSE_SERVICE_URL = "http://127.0.0.1:8002"
 
 
 
@@ -70,4 +71,16 @@ async def get_me(request: Request):
 @router.api_route("/users/{user_id}", methods=["GET", "DELETE"])
 async def user_by_id(user_id: int, request: Request):
     return await forward_request(request, USER_SERVICE_URL, f"users/{user_id}")
+
+
+# ---------------- COURSE SERVICE ----------------
+
+@router.api_route("/courses/", methods=["POST"])
+async def create_course(request: Request):
+    return await forward_request(request, COURSE_SERVICE_URL, "courses/")
+
+
+@router.api_route("/courses/", methods=["GET"])
+async def get_courses(request: Request):
+    return await forward_request(request, COURSE_SERVICE_URL, "courses/")
 

@@ -14,6 +14,7 @@ def root():
         "message": "API Gateway is running",
         "services": {
             "user_service": "http://127.0.0.1:8001",
+            "course_service": "http://127.0.0.1:8002",
         }
     }
 
