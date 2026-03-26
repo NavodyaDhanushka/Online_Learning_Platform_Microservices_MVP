@@ -4,7 +4,6 @@ from pydantic import BaseModel
 class CourseCreate(BaseModel):
     title: str
     description: str
-    instructor_id: int
 
 # 2. How data should look when we RETURN a course to the user
 class CourseResponse(BaseModel):
