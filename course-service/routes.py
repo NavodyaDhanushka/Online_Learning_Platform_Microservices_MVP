@@ -96,3 +96,8 @@ def delete_course(
     db.commit()
 
     return {"message": "Course deleted successfully"}
+
+@router.get("/courses/instructor/{instructor_id}", response_model=list[schemas.CourseResponse])
+def get_courses_by_instructor(instructor_id: int, db: Session = Depends(get_db)):
+    courses = db.query(models.Course).filter(models.Course.instructor_id == instructor_id).all()
+    return courses

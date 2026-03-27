@@ -5,8 +5,8 @@ import schemas
 
 router = APIRouter()
 
-USER_SERVICE_URL = "http://127.0.0.1:8001"
-COURSE_SERVICE_URL = "http://127.0.0.1:8002"
+USER_SERVICE_URL = "http://127.0.0.1:8005"
+COURSE_SERVICE_URL = "http://127.0.0.1:8006"
 
 
 async def forward_request(request: Request, target_url: str, path: str = ""):
@@ -88,12 +88,19 @@ async def get_me(
 
 # Protected
 @router.api_route("/users/{user_id}", methods=["GET", "DELETE"])
-async def user_by_id(
+async def delete_user_by_id(
     user_id: int,
     request: Request,
     current_user: dict = Depends(verify_token)
 ):
     return await forward_request(request, USER_SERVICE_URL, f"users/{user_id}")
+
+@router.api_route("/users/me/courses", methods=["GET"])
+async def get_my_courses(
+    request: Request,
+    current_user: dict = Depends(verify_token)
+):
+    return await forward_request(request, USER_SERVICE_URL, "users/me/courses")
 
 
 # ---------------- COURSE SERVICE ----------------
