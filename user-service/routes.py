@@ -1,3 +1,4 @@
+import httpx
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -14,6 +15,8 @@ from schemas import (
 )
 
 router = APIRouter(tags=["Users"])
+
+COURSE_SERVICE_URL = "http://127.0.0.1:8006"
 
 
 @router.post("/auth/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
@@ -70,22 +73,32 @@ def get_all_users(db: Session = Depends(get_db)):
     return db.query(User).all()
 
 
-@router.get("/users/{user_id}", response_model=UserResponse)
-def get_user_by_id(user_id: int, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.id == user_id).first()
-
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
-        )
-
-    return user
-
-
 @router.get("/users/me", response_model=UserResponse)
 def get_logged_in_user(current_user: User = Depends(get_current_user)):
     return current_user
+
+
+@router.get("/users/me/courses")
+async def get_my_courses(current_user: User = Depends(require_instructor)):
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.get(
+                f"{COURSE_SERVICE_URL}/courses/instructor/{current_user.id}"
+            )
+
+        if response.status_code != 200:
+            raise HTTPException(
+                status_code=response.status_code,
+                detail="Could not fetch instructor courses from Course Service"
+            )
+
+        return response.json()
+
+    except httpx.RequestError:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Course Service is unavailable"
+        )
 
 
 @router.put("/users/me", response_model=UserResponse)
@@ -114,6 +127,19 @@ def update_my_profile(
     db.refresh(current_user)
 
     return current_user
+
+
+@router.get("/users/{user_id}", response_model=UserResponse)
+def get_user_by_id(user_id: int, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.id == user_id).first()
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+
+    return user
 
 
 @router.delete("/users/{user_id}")
