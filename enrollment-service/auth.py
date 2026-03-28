@@ -38,6 +38,6 @@ def require_student(current_user: dict = Depends(get_current_user)):
     if current_user["role"] != "student":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only instructors can perform this action"
+            detail="Only Students can perform this action"
         )
     return current_user
