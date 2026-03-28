@@ -5,8 +5,10 @@ import schemas
 
 router = APIRouter()
 
-USER_SERVICE_URL = "http://127.0.0.1:8005"
-COURSE_SERVICE_URL = "http://127.0.0.1:8006"
+USER_SERVICE_URL = "http://127.0.0.1:8010"
+COURSE_SERVICE_URL = "http://127.0.0.1:8011"
+ENROLLMENT_SERVICE_URL = "http://127.0.0.1:8012"
+REVIEW_SERVICE_URL = "http://127.0.0.1:8013"
 
 
 async def forward_request(request: Request, target_url: str, path: str = ""):
@@ -56,20 +58,17 @@ async def forward_request(request: Request, target_url: str, path: str = ""):
 
 # ---------------- USER SERVICE ----------------
 
-# Public
 @router.post("/auth/register")
 async def register_user(payload: schemas.UserRegister, request: Request):
     return await forward_request(request, USER_SERVICE_URL, "auth/register")
 
 
-# Public
 @router.post("/auth/login")
 async def login_user(payload: schemas.UserLogin, request: Request):
     return await forward_request(request, USER_SERVICE_URL, "auth/login")
 
 
-# Protected
-@router.api_route("/users", methods=["GET"])
+@router.get("/users")
 async def get_users(
     request: Request,
     current_user: dict = Depends(verify_token)
@@ -77,17 +76,46 @@ async def get_users(
     return await forward_request(request, USER_SERVICE_URL, "users")
 
 
-# Protected
-@router.api_route("/users/me", methods=["GET"])
+@router.get("/users/me")
 async def get_me(
     request: Request,
     current_user: dict = Depends(verify_token)
 ):
     return await forward_request(request, USER_SERVICE_URL, "users/me")
 
-
 # Protected
-@router.api_route("/users/{user_id}", methods=["GET", "DELETE"])
+@router.put("/users/me")
+async def update_my_profile(
+    payload: schemas.UserUpdate,
+    request: Request,
+    current_user: dict = Depends(verify_token)
+):
+    return await forward_request(request, USER_SERVICE_URL, "users/me")
+
+@router.get("/users/me/courses")
+async def get_my_courses(
+    request: Request,
+    current_user: dict = Depends(verify_token)
+):
+    return await forward_request(request, USER_SERVICE_URL, "users/me/courses")
+
+@router.get("/users/me/enrolled-courses")
+async def get_my_enrolled_courses(
+    request: Request,
+    current_user: dict = Depends(verify_token)
+):
+    return await forward_request(request, USER_SERVICE_URL, "users/me/enrolled-courses")
+
+@router.get("/users/{user_id}")
+async def get_user_by_id(
+    user_id: int,
+    request: Request,
+    current_user: dict = Depends(verify_token)
+):
+    return await forward_request(request, USER_SERVICE_URL, f"users/{user_id}")
+
+
+@router.delete("/users/{user_id}")
 async def delete_user_by_id(
     user_id: int,
     request: Request,
@@ -95,17 +123,9 @@ async def delete_user_by_id(
 ):
     return await forward_request(request, USER_SERVICE_URL, f"users/{user_id}")
 
-@router.api_route("/users/me/courses", methods=["GET"])
-async def get_my_courses(
-    request: Request,
-    current_user: dict = Depends(verify_token)
-):
-    return await forward_request(request, USER_SERVICE_URL, "users/me/courses")
-
 
 # ---------------- COURSE SERVICE ----------------
 
-# Protected - only logged in users can try; course service will still check instructor role
 @router.post("/courses/")
 async def create_course(
     payload: schemas.CourseCreate,
@@ -115,19 +135,41 @@ async def create_course(
     return await forward_request(request, COURSE_SERVICE_URL, "courses/")
 
 
-# Public
-@router.api_route("/courses/", methods=["GET"])
+@router.get("/courses/")
 async def get_courses(request: Request):
     return await forward_request(request, COURSE_SERVICE_URL, "courses/")
 
 
-# Public
-@router.api_route("/courses/{course_id}", methods=["GET"])
+@router.get("/courses/instructor/{instructor_id}")
+async def get_courses_by_instructor(
+    instructor_id: int,
+    request: Request
+):
+    return await forward_request(
+        request,
+        COURSE_SERVICE_URL,
+        f"courses/instructor/{instructor_id}"
+    )
+
+
+@router.get("/courses/{course_id}/students")
+async def get_course_students(
+    course_id: int,
+    request: Request,
+    current_user: dict = Depends(verify_token)
+):
+    return await forward_request(
+        request,
+        COURSE_SERVICE_URL,
+        f"courses/{course_id}/students"
+    )
+
+
+@router.get("/courses/{course_id}")
 async def get_course_by_id(course_id: int, request: Request):
     return await forward_request(request, COURSE_SERVICE_URL, f"courses/{course_id}")
 
 
-# Protected
 @router.put("/courses/{course_id}")
 async def update_course(
     course_id: int,
@@ -138,7 +180,6 @@ async def update_course(
     return await forward_request(request, COURSE_SERVICE_URL, f"courses/{course_id}")
 
 
-# Protected
 @router.delete("/courses/{course_id}")
 async def delete_course(
     course_id: int,
@@ -146,3 +187,117 @@ async def delete_course(
     current_user: dict = Depends(verify_token)
 ):
     return await forward_request(request, COURSE_SERVICE_URL, f"courses/{course_id}")
+
+
+# ---------------- ENROLLMENT SERVICE ----------------
+
+@router.post("/enrollments")
+async def create_enrollment(
+    payload: schemas.EnrollmentCreate,
+    request: Request,
+    current_user: dict = Depends(verify_token)
+):
+    return await forward_request(request, ENROLLMENT_SERVICE_URL, "enrollments")
+
+
+@router.get("/enrollments")
+async def list_enrollments(
+    request: Request,
+    current_user: dict = Depends(verify_token)
+):
+    return await forward_request(request, ENROLLMENT_SERVICE_URL, "enrollments")
+
+
+@router.get("/enrollments/check")
+async def check_enrollment(
+    request: Request,
+    current_user: dict = Depends(verify_token)
+):
+    return await forward_request(request, ENROLLMENT_SERVICE_URL, "enrollments/check")
+
+
+@router.get("/enrollments/course/{course_id}")
+async def get_enrollments_by_course(
+    course_id: int,
+    request: Request,
+    current_user: dict = Depends(verify_token)
+):
+    return await forward_request(
+        request,
+        ENROLLMENT_SERVICE_URL,
+        f"enrollments/course/{course_id}"
+    )
+
+
+@router.get("/enrollments/{enrollment_id}")
+async def get_enrollment(
+    enrollment_id: int,
+    request: Request,
+    current_user: dict = Depends(verify_token)
+):
+    return await forward_request(
+        request,
+        ENROLLMENT_SERVICE_URL,
+        f"enrollments/{enrollment_id}"
+    )
+
+
+@router.put("/enrollments/{enrollment_id}")
+async def update_enrollment(
+    enrollment_id: int,
+    payload: schemas.EnrollmentCreate,
+    request: Request,
+    current_user: dict = Depends(verify_token)
+):
+    return await forward_request(
+        request,
+        ENROLLMENT_SERVICE_URL,
+        f"enrollments/{enrollment_id}"
+    )
+
+
+@router.delete("/enrollments/{enrollment_id}")
+async def delete_enrollment(
+    enrollment_id: int,
+    request: Request,
+    current_user: dict = Depends(verify_token)
+):
+    return await forward_request(
+        request,
+        ENROLLMENT_SERVICE_URL,
+        f"enrollments/{enrollment_id}"
+    )
+
+# ---------------- REVIEW SERVICE ----------------
+
+@router.post("/reviews/")
+async def create_review(
+    payload: schemas.ReviewCreate,
+    request: Request,
+    current_user: dict = Depends(verify_token)
+):
+    return await forward_request(request, REVIEW_SERVICE_URL, "reviews/")
+
+
+@router.get("/reviews/")
+async def get_reviews(request: Request):
+    return await forward_request(request, REVIEW_SERVICE_URL, "reviews/")
+
+
+@router.put("/reviews/{review_id}")
+async def update_review(
+    review_id: int,
+    payload: schemas.ReviewUpdate,
+    request: Request,
+    current_user: dict = Depends(verify_token)
+):
+    return await forward_request(request, REVIEW_SERVICE_URL, f"reviews/{review_id}")
+
+
+@router.delete("/reviews/{review_id}")
+async def delete_review(
+    review_id: int,
+    request: Request,
+    current_user: dict = Depends(verify_token)
+):
+    return await forward_request(request, REVIEW_SERVICE_URL, f"reviews/{review_id}")

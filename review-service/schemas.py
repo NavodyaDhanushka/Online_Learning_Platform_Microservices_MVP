@@ -1,7 +1,6 @@
 from pydantic import BaseModel
 
 class ReviewCreate(BaseModel):
-    student_id: int
     course_id: int
     comment: str
 
