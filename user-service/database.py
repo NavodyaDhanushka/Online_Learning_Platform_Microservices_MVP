@@ -3,9 +3,8 @@ from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
-load_dotenv()
 
-DATABASE_URL = os.getenv("DATABASE_URL")
+DATABASE_URL = "mysql+pymysql://root:N1ghtfur3@localhost:3306/user_service_db"
 
 if not DATABASE_URL:
     raise ValueError("DATABASE_URL is not set in the .env file")
