@@ -1,11 +1,12 @@
 from fastapi import APIRouter, Request, Response, HTTPException, Depends
 from auth import verify_token
 import httpx
+import schemas
 
 router = APIRouter()
 
-USER_SERVICE_URL = "http://127.0.0.1:8001"
-COURSE_SERVICE_URL = "http://127.0.0.1:8002"
+USER_SERVICE_URL = "http://127.0.0.1:8005"
+COURSE_SERVICE_URL = "http://127.0.0.1:8006"
 
 
 async def forward_request(request: Request, target_url: str, path: str = ""):
@@ -56,14 +57,14 @@ async def forward_request(request: Request, target_url: str, path: str = ""):
 # ---------------- USER SERVICE ----------------
 
 # Public
-@router.api_route("/auth/register", methods=["POST"])
-async def register_user(request: Request):
+@router.post("/auth/register")
+async def register_user(payload: schemas.UserRegister, request: Request):
     return await forward_request(request, USER_SERVICE_URL, "auth/register")
 
 
 # Public
-@router.api_route("/auth/login", methods=["POST"])
-async def login_user(request: Request):
+@router.post("/auth/login")
+async def login_user(payload: schemas.UserLogin, request: Request):
     return await forward_request(request, USER_SERVICE_URL, "auth/login")
 
 
@@ -87,19 +88,27 @@ async def get_me(
 
 # Protected
 @router.api_route("/users/{user_id}", methods=["GET", "DELETE"])
-async def user_by_id(
+async def delete_user_by_id(
     user_id: int,
     request: Request,
     current_user: dict = Depends(verify_token)
 ):
     return await forward_request(request, USER_SERVICE_URL, f"users/{user_id}")
 
+@router.api_route("/users/me/courses", methods=["GET"])
+async def get_my_courses(
+    request: Request,
+    current_user: dict = Depends(verify_token)
+):
+    return await forward_request(request, USER_SERVICE_URL, "users/me/courses")
+
 
 # ---------------- COURSE SERVICE ----------------
 
 # Protected - only logged in users can try; course service will still check instructor role
-@router.api_route("/courses/", methods=["POST"])
+@router.post("/courses/")
 async def create_course(
+    payload: schemas.CourseCreate,
     request: Request,
     current_user: dict = Depends(verify_token)
 ):
@@ -119,9 +128,10 @@ async def get_course_by_id(course_id: int, request: Request):
 
 
 # Protected
-@router.api_route("/courses/{course_id}", methods=["PUT"])
+@router.put("/courses/{course_id}")
 async def update_course(
     course_id: int,
+    payload: schemas.CourseCreate,
     request: Request,
     current_user: dict = Depends(verify_token)
 ):
@@ -129,7 +139,7 @@ async def update_course(
 
 
 # Protected
-@router.api_route("/courses/{course_id}", methods=["DELETE"])
+@router.delete("/courses/{course_id}")
 async def delete_course(
     course_id: int,
     request: Request,
