@@ -2,8 +2,7 @@ from pydantic import BaseModel
 from datetime import datetime
 
 class EnrollmentBase(BaseModel):
-    student_id: str
-    course_id: str
+    course_id: int
 
 class EnrollmentCreate(EnrollmentBase):
     pass

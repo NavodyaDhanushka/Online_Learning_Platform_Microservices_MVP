@@ -16,7 +16,8 @@ from schemas import (
 
 router = APIRouter(tags=["Users"])
 
-COURSE_SERVICE_URL = "http://127.0.0.1:8006"
+COURSE_SERVICE_URL = "http://127.0.0.1:8011"
+ENROLLMENT_SERVICE_URL = "http://127.0.0.1:8012"
 
 
 @router.post("/auth/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
@@ -98,6 +99,51 @@ async def get_my_courses(current_user: User = Depends(require_instructor)):
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Course Service is unavailable"
+        )
+
+
+@router.get("/users/me/enrolled-courses")
+async def get_my_enrolled_courses(current_user: User = Depends(get_current_user)):
+    if current_user.role != "student":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only students can view enrolled courses"
+        )
+
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            # Step 1: get student's enrollments
+            enroll_response = await client.get(
+                f"{ENROLLMENT_SERVICE_URL}/enrollments/student/{current_user.id}"
+            )
+
+            if enroll_response.status_code != 200:
+                raise HTTPException(
+                    status_code=enroll_response.status_code,
+                    detail="Could not fetch student enrollments from Enrollment Service"
+                )
+
+            enrollments = enroll_response.json()
+
+            # Step 2: get full course details for each enrolled course
+            enrolled_courses = []
+
+            for enrollment in enrollments:
+                course_id = enrollment["course_id"]
+
+                course_response = await client.get(
+                    f"{COURSE_SERVICE_URL}/courses/{course_id}"
+                )
+
+                if course_response.status_code == 200:
+                    enrolled_courses.append(course_response.json())
+
+            return enrolled_courses
+
+    except httpx.RequestError:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Dependent service is unavailable"
         )
 
 
