@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Request, Response, HTTPException, Depends
-from auth import verify_token
+from auth import verify_token, require_instructor
 import httpx
 import schemas
 
@@ -119,7 +119,7 @@ async def get_user_by_id(
 async def delete_user_by_id(
     user_id: int,
     request: Request,
-    current_user: dict = Depends(verify_token)
+    current_user: dict = Depends(require_instructor)
 ):
     return await forward_request(request, USER_SERVICE_URL, f"users/{user_id}")
 

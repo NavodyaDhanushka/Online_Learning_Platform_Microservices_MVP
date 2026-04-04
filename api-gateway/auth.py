@@ -33,3 +33,9 @@ def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired token"
         )
+
+
+def require_instructor(current_user: dict = Depends(verify_token)):
+    if current_user.get("role") != "instructor":
+        raise HTTPException(status_code=403, detail="Only instructors can perform this action")
+    return current_user
