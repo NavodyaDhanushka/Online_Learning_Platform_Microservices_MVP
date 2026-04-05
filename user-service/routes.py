@@ -202,7 +202,21 @@ def delete_user(
             detail="User not found"
         )
 
+    # Instructor cannot delete another instructor
+    if user.role == "instructor":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Instructors cannot delete other instructors"
+        )
+
+    # Only students can be deleted
+    if user.role != "student":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only students can be deleted"
+        )
+
     db.delete(user)
     db.commit()
 
-    return {"message": "User deleted successfully"}
+    return {"message": "Student deleted successfully"}

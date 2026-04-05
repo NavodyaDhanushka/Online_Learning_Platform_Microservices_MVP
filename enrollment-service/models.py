@@ -6,6 +6,6 @@ class Enrollment(Base):
     __tablename__ = "enrollments"
 
     id = Column(Integer, primary_key=True, index=True)
-    student_id = Column(String(50), nullable=False)
-    course_id = Column(String(50), nullable=False)
+    student_id = Column(Integer, nullable=False)
+    course_id = Column(Integer, nullable=False)
     enrolled_date = Column(DateTime, default=datetime.utcnow)

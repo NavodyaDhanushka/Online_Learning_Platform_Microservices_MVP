@@ -1,4 +1,6 @@
-from pydantic import BaseModel, EmailStr
+import re
+
+from pydantic import BaseModel, EmailStr, field_validator
 
 
 # ---------------- USER SCHEMAS ----------------
@@ -25,6 +27,13 @@ class UserUpdate(BaseModel):
 class CourseCreate(BaseModel):
     title: str
     description: str
+
+    @field_validator("title", "description")
+    @classmethod
+    def no_special_characters(cls, value: str) -> str:
+        if not re.match(r"^[a-zA-Z0-9\s]+$", value):
+            raise ValueError("Field must not contain special characters")
+        return value
 
 
 # ---------------- ENROLLMENT SCHEMAS ----------------
